@@ -9,8 +9,8 @@ sequence = System.argv
 sequence
 |> (fn [hd | tl] -> [hd | tl] ++ [hd] end).()
 |> Enum.chunk_every(2, 1, :discard)
-|> Enum.filter(fn [a | [b | []]] -> a == b end)
-|> Enum.reduce(0, fn ([n | _], sum) -> sum + n end)
+|> Enum.filter(fn [a, b] -> a == b end)
+|> Enum.reduce(0, fn ([n , _], sum) -> sum + n end)
 |> IO.inspect
 
 # Part Two

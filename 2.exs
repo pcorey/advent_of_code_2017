@@ -48,10 +48,10 @@ defmodule Sheet do
   defp check_divisor(divisor, row) do
     Enum.intersperse(row, divisor) ++ [divisor]
     |> Enum.chunk_every(2, 1, :discard)
-    |> Enum.filter(fn [a | [b | []]] -> rem(a, b) == 0 && a != b end)
+    |> Enum.filter(fn [a, b] -> rem(a, b) == 0 && a != b end)
   end
 
-  defp divide_pair([a | [b | []]]) do
+  defp divide_pair([a, b]) do
     div(a, b)
   end
 end
