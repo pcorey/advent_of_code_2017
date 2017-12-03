@@ -1,14 +1,40 @@
 defmodule Spiral do
   import Integer, only: [is_even: 1]
 
-  def stream do
-    Stream.resource(&start/0, &next/1, fn _ -> :ok end)
+  def steps_required(input) do
+    stream()
+    |> Enum.at(input - 1)
+    |> distance
   end
 
-  def steps_required(square) do
-    stream()
-    |> Enum.at(square - 1)
-    |> distance
+  def stress_test(input) do
+    Enum.reduce_while(stream(), %{{0, 0} => 1}, fn
+      ({_, pos}, map) ->
+        sum = Enum.sum(neighbors(map, pos))
+        if sum > input do
+          {:halt, sum}
+        else
+          {:cont, Map.put_new(map, pos, sum)}
+        end
+    end)
+  end
+
+  defp neighbors(map, {x, y}) do
+    [
+      Map.get(map, {x + 1, y}),
+      Map.get(map, {x + 1, y + 1}),
+      Map.get(map, {x,     y + 1}),
+      Map.get(map, {x - 1, y + 1}),
+      Map.get(map, {x - 1, y}),
+      Map.get(map, {x - 1, y - 1}),
+      Map.get(map, {x,     y - 1}),
+      Map.get(map, {x + 1, y - 1})
+    ]
+    |> Enum.filter(&(&1))
+  end
+
+  defp stream do
+    Stream.resource(&start/0, &next/1, fn _ -> :ok end)
   end
 
   defp distance({_, {x, y}}) do
@@ -39,10 +65,14 @@ defmodule Spiral do
   defp length(len, _), do: len
 end
 
-square = System.argv
+input = System.argv
 |> List.first
 |> String.to_integer
 
 # Part one
-Spiral.steps_required(square)
+Spiral.steps_required(input)
+|> IO.inspect
+
+# Part two
+Spiral.stress_test(input)
 |> IO.inspect
