@@ -19,7 +19,7 @@ defmodule Passphrase do
     |> Enum.reduce(%{}, fn
       (word, map) ->
         sorted = word
-        |> String.split("", trim: true)
+        |> String.graphemes
         |> Enum.sort
         Map.put_new(map, sorted, :ok)
     end)
