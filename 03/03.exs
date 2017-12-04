@@ -34,24 +34,22 @@ defmodule Spiral do
   end
 
   defp stream do
-    Stream.resource(&start/0, &next/1, fn _ -> :ok end)
+    Stream.unfold({1, {0, 0}, {1, 0}, 1, 1, 1}, &next/1)
   end
 
   defp distance({_, {x, y}}) do
     abs(x) + abs(y)
   end
 
-  defp start, do: {1, {0, 0}, {1, 0}, 1, 1, 1}
-
   defp next({val, pos, dir, seg, len, 1}) do
     len = length(len, seg)
     next = {val + 1, move(pos, dir), turn(dir), seg + 1, len, len}
-    {[{val, pos}], next}
+    {{val, pos}, next}
   end
 
   defp next({val, pos, dir, seg, len, left}) do
     next = {val + 1, move(pos, dir), dir, seg, len, left - 1}
-    {[{val, pos}], next}
+    {{val, pos}, next}
   end
 
   defp move({x1, y1}, {x2, y2}), do: {x1 + x2, y1 + y2}
