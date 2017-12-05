@@ -36,12 +36,7 @@ input
 
 # Part two
 input
-|> Maze.stream(fn
-  n when n >= 3 ->
-    -1
-  _ ->
-    1
-end)
+|> Maze.stream(fn n -> if n >= 3, do: -1, else: 1 end)
 |> Enum.to_list
 |> length
 |> IO.inspect
