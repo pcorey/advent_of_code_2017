@@ -7,8 +7,11 @@ defmodule Maze do
 
   def next({index, jumps}) do
     jump = Enum.at(jumps, index)
-    {jump, {index + jump, List.replace_at(jumps, index, jump + 1)}}
+    {jump, {index + jump, List.replace_at(jumps, index, jump + offset(jump))}}
   end
+
+  def offset(jump) when jump >= 3, do: -1
+  def offset(_), do: 1
 end
 
 input = System.argv
