@@ -27,10 +27,8 @@ defmodule Registers do
     |> Enum.reduce(%{}, fn
       ({r1, op1, v1, r2, op2, v2}, registers) ->
         if apply(Kernel, op2, [Map.get(registers, r2, 0), v2]) do
-          case Map.get(registers, r1) do
-            nil -> Map.put(registers, r1, apply(__MODULE__, op1, [0, v1]))
-            val -> Map.put(registers, r1, apply(__MODULE__, op1, [val, v1]))
-          end
+          val = Map.get(registers, r1) || 0
+          Map.put(registers, r1, apply(__MODULE__, op1, [val, v1]))
         else
           registers
         end
