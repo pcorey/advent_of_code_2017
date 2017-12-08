@@ -24,13 +24,14 @@ defmodule Registers do
 
   defp process(instructions) do
     instructions
-    |> Enum.reduce(%{}, fn
-      ({r1, op1, v1, r2, op2, v2}, registers) ->
+    |> Enum.reduce({0, %{}}, fn
+      ({r1, op1, v1, r2, op2, v2}, {highest, registers}) ->
         if apply(Kernel, op2, [Map.get(registers, r2, 0), v2]) do
           val = Map.get(registers, r1) || 0
-          Map.put(registers, r1, apply(__MODULE__, op1, [val, v1]))
+          highest = if val > highest, do: val, else: highest
+          {highest, Map.put(registers, r1, apply(__MODULE__, op1, [val, v1]))}
         else
-          registers
+          {highest, registers}
         end
     end)
   end
@@ -46,6 +47,13 @@ input = System.argv
 # Part one
 input
 |> Registers.compute
+|> elem(1)
 |> Map.values
 |> Enum.max
+|> IO.inspect
+
+# Part two
+input
+|> Registers.compute
+|> elem(0)
 |> IO.inspect
