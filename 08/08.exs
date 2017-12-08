@@ -41,19 +41,18 @@ defmodule Registers do
 end
 
 
-input = System.argv
+registers = System.argv
 |> List.first
+|> Registers.compute
 
 # Part one
-input
-|> Registers.compute
+registers
 |> elem(1)
 |> Map.values
 |> Enum.max
 |> IO.inspect
 
 # Part two
-input
-|> Registers.compute
+registers
 |> elem(0)
 |> IO.inspect
