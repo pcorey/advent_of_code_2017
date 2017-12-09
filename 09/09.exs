@@ -39,7 +39,7 @@ defmodule GarbageStream do
     process(stream, :score, score, accum)
   end
 
-  defp process(["!" | [_ | stream]], :garbage, score, accum) do
+  defp process(["!" , _ | stream], :garbage, score, accum) do
     process(stream, :garbage, score, accum)
   end
 
