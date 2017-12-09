@@ -2,40 +2,49 @@ defmodule GarbageStream do
   def score(input) do
     input
     |> String.graphemes
-    |> score(:score, 0, [])
+    |> process(:score, 0, {[], []})
+    |> elem(0)
     |> Enum.sum
   end
 
-  defp score([], _, _, scores) do
-    scores
+  def garbage(input) do
+    input
+    |> String.graphemes
+    |> process(:score, 0, {[], []})
+    |> elem(1)
+    |> length
   end
 
-  defp score(["{" | stream], :score, score, scores) do
-    score(stream, :score, score + 1, scores)
+  defp process([], _, _, accum) do
+    accum
   end
 
-  defp score(["}" | stream], :score, score, scores) do
-    score(stream, :score, score - 1, [score | scores])
+  defp process(["{" | stream], :score, score, accum) do
+    process(stream, :score, score + 1, accum)
   end
 
-  defp score(["," | stream], :score, score, scores) do
-    score(stream, :score, score, scores)
+  defp process(["}" | stream], :score, score, {scores, garbage}) do
+    process(stream, :score, score - 1, {[score | scores], garbage})
   end
 
-  defp score(["<" | stream], :score, score, scores) do
-    score(stream, :garbage, score, scores)
+  defp process(["," | stream], :score, score, accum) do
+    process(stream, :score, score, accum)
   end
 
-  defp score([">" | stream], :garbage, score, scores) do
-    score(stream, :score, score, scores)
+  defp process(["<" | stream], :score, score, accum) do
+    process(stream, :garbage, score, accum)
   end
 
-  defp score(["!" | [_ | stream]], :garbage, score, scores) do
-    score(stream, :garbage, score, scores)
+  defp process([">" | stream], :garbage, score, accum) do
+    process(stream, :score, score, accum)
   end
 
-  defp score([_ | stream], :garbage, score, scores) do
-    score(stream, :garbage, score, scores)
+  defp process(["!" | [_ | stream]], :garbage, score, accum) do
+    process(stream, :garbage, score, accum)
+  end
+
+  defp process([c | stream], :garbage, score, {scores, garbage}) do
+    process(stream, :garbage, score, {scores, [c | garbage]})
   end
 end
 
@@ -45,4 +54,9 @@ input = System.argv
 # Part one
 input
 |> GarbageStream.score
+|> IO.inspect
+
+# Part two
+input
+|> GarbageStream.garbage
 |> IO.inspect
