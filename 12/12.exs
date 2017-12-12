@@ -1,8 +1,21 @@
 defmodule Pipes do
-  def group_size(input, process) do
+  def map(input) do
     input
     |> reduce
+  end
+
+  def group_size(map, process) do
+    map
     |> group(process)
+    |> MapSet.to_list
+    |> length
+  end
+
+  def groups(map) do
+    map
+    |> Map.keys
+    |> Enum.map(&group(map, &1))
+    |> MapSet.new
     |> MapSet.to_list
     |> length
   end
@@ -38,9 +51,16 @@ defmodule Pipes do
   end
 end
 
-input = List.first(System.argv)
+map = System.argv
+|> List.first
+|> Pipes.map
 
 # Part one
-input
+map
 |> Pipes.group_size(0)
+|> IO.inspect
+
+# Part two
+map
+|> Pipes.groups
 |> IO.inspect
