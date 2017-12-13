@@ -7,11 +7,22 @@ defmodule Firewall do
     |> Enum.into(%{})
   end
 
-  def severity(layers) do
+  def severity(layers, delay) do
     layers
-    |> Enum.filter(fn {depth, range} -> rem(depth, range * 2 - 2) == 0 end)
+    |> catches(delay)
     |> Enum.map(fn {depth, range} -> depth * range end)
     |> Enum.sum
+  end
+
+  def catches(layers, delay) do
+    layers
+    |> Enum.filter(fn {depth, range} -> rem(delay + depth, range * 2 - 2) == 0 end)
+  end
+
+  def period(layers) do
+    layers
+    |> Map.values
+    |> Enum.reduce(&Kernel.*/2)
   end
 end
 
@@ -21,5 +32,13 @@ layers = System.argv
 
 # Part one
 layers
-|> Firewall.severity
+|> Firewall.severity(0)
+|> IO.inspect
+
+# Part one
+1..(Firewall.period(layers))
+|> Enum.find(fn
+  depth ->
+    Firewall.catches(layers, depth) == []
+end)
 |> IO.inspect
