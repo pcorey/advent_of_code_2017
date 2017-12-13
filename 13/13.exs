@@ -22,6 +22,7 @@ defmodule Firewall do
   def period(layers) do
     layers
     |> Map.values
+    |> Enum.uniq
     |> Enum.reduce(&Kernel.*/2)
   end
 end
