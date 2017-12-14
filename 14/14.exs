@@ -44,13 +44,36 @@ defmodule Disk do
     |> Enum.map(&String.upcase/1)
     |> Enum.map(&Base.decode16!/1)
     |> Enum.with_index
-    |> Enum.reduce(%{}, fn ({h, y}, m) -> reduce(h, {0, y, m}) end)
+    |> Enum.reduce(%MapSet{}, fn ({h, y}, m) -> reduce(h, {0, y, m}) end)
   end
 
-  def reduce(<<>>, {_, _, m}), do: m
-  def reduce(<<1 :: size(1), rest :: bitstring>>, {x, y, m}), do:
-    reduce(rest, {x + 1, y, Map.put_new(m, {x, y}, true)})
-  def reduce(<<0 :: size(1), rest :: bitstring>>, {x, y, m}), do:
+  def regions(squares), do: regions(MapSet.to_list(squares), squares)
+
+  def regions([], _), do: 0
+  def regions([square | _], squares) do
+    squares = MapSet.difference(squares, crawl(squares, [square]))
+    1 + regions(MapSet.to_list(squares), squares)
+  end
+
+  defp crawl(_, _, region \\ %MapSet{})
+  defp crawl(_, [], region), do: region
+  defp crawl(squares, [{x, y} | rest], region) do
+    squares = MapSet.delete(squares, {x, y})
+    region = MapSet.put(region, {x, y})
+    next = [
+      {x + 1, y},
+      {x - 1, y},
+      {x, y + 1},
+      {x, y - 1}
+    ]
+    |> Enum.filter(&(MapSet.member?(squares, &1) && !MapSet.member?(region, &1)))
+    crawl(squares, rest ++ next, region)
+  end
+
+  defp reduce(<<>>, {_, _, m}), do: m
+  defp reduce(<<1 :: size(1), rest :: bitstring>>, {x, y, m}), do:
+    reduce(rest, {x + 1, y, MapSet.put(m, {x, y})})
+  defp reduce(<<0 :: size(1), rest :: bitstring>>, {x, y, m}), do:
     reduce(rest, {x + 1, y, m})
 end
 
@@ -60,6 +83,11 @@ squares = System.argv
 
 # Part one
 squares
-|> Map.keys()
+|> MapSet.to_list()
 |> length
+|> IO.inspect
+
+# Part one
+squares
+|> Disk.regions
 |> IO.inspect
