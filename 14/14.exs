@@ -38,23 +38,28 @@ defmodule KnotHash do
 end
 
 defmodule Disk do
-  def hashes(key) do
+  def squares(key) do
     hashes = for i <- 0..127, do: KnotHash.hash("#{key}-#{i}")
-    Enum.map(hashes, &reduce(&1 |> String.upcase |> Base.decode16!, ""))
+    hashes
+    |> Enum.map(&String.upcase/1)
+    |> Enum.map(&Base.decode16!/1)
+    |> Enum.with_index
+    |> Enum.reduce(%{}, fn ({h, y}, m) -> reduce(h, {0, y, m}) end)
   end
 
-  def reduce(<<>>, s), do: s
-  def reduce(<<1 :: size(1), rest :: bitstring>>, s), do:
-    reduce(rest, s <> "#")
-  def reduce(<<0 :: size(1), rest :: bitstring>>, s), do:
-    reduce(rest, s <> ".")
+  def reduce(<<>>, {_, _, m}), do: m
+  def reduce(<<1 :: size(1), rest :: bitstring>>, {x, y, m}), do:
+    reduce(rest, {x + 1, y, Map.put_new(m, {x, y}, true)})
+  def reduce(<<0 :: size(1), rest :: bitstring>>, {x, y, m}), do:
+    reduce(rest, {x + 1, y, m})
 end
 
-key = System.argv
+squares = System.argv
 |> List.first
-|> Disk.hashes
-|> Enum.join()
-|> String.split("")
-|> Enum.filter(&(&1 == "#"))
+|> Disk.squares
+
+# Part one
+squares
+|> Map.keys()
 |> length
 |> IO.inspect
