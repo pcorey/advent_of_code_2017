@@ -1,13 +1,12 @@
 defmodule Generators do
+  use Bitwise
+
   def judge(seeds, rounds, divisors \\ nil) do
     pairs(seeds, divisors)
     |> Enum.take(rounds)
     |> Enum.filter(fn
       {a, b} ->
-        padding = <<0x00, 0x00>>
-        <<a :: 16, _ :: binary>> = :binary.encode_unsigned(a, :little) <> padding
-        <<b :: 16, _ :: binary>> = :binary.encode_unsigned(b, :little) <> padding
-        a == b
+        (a &&& 0xFFFF) == (b &&& 0xFFFF)
     end)
     |> length
   end
