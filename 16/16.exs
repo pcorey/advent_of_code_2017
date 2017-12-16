@@ -1,22 +1,32 @@
 defmodule PermutationPromenade do
-  @initial "abcdefghijklmnop"
+  def period(input) do
+    Enum.reduce_while(0..1_000_000_000, {"abcdefghijklmnop", %{}}, fn
+      (i, {initial, map}) ->
+        if Map.get(map, initial) do
+          {:halt, i}
+        else
+          map = Map.put_new(map, initial, i)
+          {:cont, {PermutationPromenade.dance(input, initial), map}}
+        end
+    end)
+  end
 
-  def dance(moves) do
+  def dance(moves, initial) when is_binary(initial) do
     moves
-    |> dance(String.split(@initial, "", trim: true))
+    |> dance(String.split(initial, "", trim: true))
     |> Enum.join("")
   end
 
-  defp dance([], programs), do: programs
+  def dance([], programs), do: programs
 
-  defp dance([["s", x] | moves], programs) do
+  def dance([["s", x] | moves], programs) do
     programs = programs
     |> Enum.split(-String.to_integer(x))
     |> (fn {a, b} -> b ++ a end).()
     dance(moves, programs)
   end
 
-  defp dance([["x", a, b] | moves], programs) do
+  def dance([["x", a, b] | moves], programs) do
     a = String.to_integer(a)
     b = String.to_integer(b)
     programs = programs
@@ -25,7 +35,7 @@ defmodule PermutationPromenade do
     dance(moves, programs)
   end
 
-  defp dance([["p", a, b] | moves], programs) do
+  def dance([["p", a, b] | moves], programs) do
     a = Enum.find_index(programs, &(&1 == a))
     b = Enum.find_index(programs, &(&1 == b))
     programs = programs
@@ -47,6 +57,14 @@ input = System.argv
 end)
 
 # Part one
-input
-|> PermutationPromenade.dance
+initial = input
+|> PermutationPromenade.dance("abcdefghijklmnop")
+|> IO.inspect
+
+# Part two
+period = PermutationPromenade.period(input)
+Enum.reduce((div(1_000_000_000, period) * period + 1)..1_000_000_000, "abcdefghijklmnop", fn
+  (i, initial) ->
+    PermutationPromenade.dance(input, initial)
+end)
 |> IO.inspect
