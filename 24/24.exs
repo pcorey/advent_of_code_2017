@@ -3,11 +3,22 @@ defmodule Bridge do
     input
     |> parse
     |> build(0)
-    |> Enum.map(fn
-      bridge ->
-        Enum.reduce(bridge, 0, fn({a, b}, s) -> s + a + b end)
-    end)
+  end
+
+  def max_strength(bridges) do
+    bridges
+    |> Enum.map(&(Enum.reduce(&1, 0, fn({a, b}, s) -> s + a + b end)))
     |> Enum.max
+  end
+
+  def filter_longest(bridges) do
+    length = bridges
+    |> Enum.sort_by(&length/1)
+    |> Enum.reverse
+    |> List.first
+    |> length
+    bridges
+    |> Enum.filter(&(length(&1) == length))
   end
 
   def build([], _), do: []
@@ -42,7 +53,17 @@ defmodule Bridge do
   end
 end
 
-System.argv
+bridges = System.argv
 |> hd
 |> Bridge.build
+
+#Part one
+bridges
+|> Bridge.max_strength
+|> IO.inspect
+
+#Part two
+bridges
+|> Bridge.filter_longest
+|> Bridge.max_strength
 |> IO.inspect
