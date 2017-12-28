@@ -1,14 +1,19 @@
+require ExUnit.Assertions
+
 defmodule FractalArt do
   def stream(input) do
     replacements = input
     |> parse
-
-    Stream.iterate([".", "#", ".", ".", ".", "#", "#", "#", "#"], fn
-      flat ->
-        width = :math.sqrt(length(flat)) |> trunc
+    |> IO.inspect
+    Stream.iterate(%{{0, 0} => ".", {1, 0} => "#", {2, 0} => ".",
+                     {0, 1} => ".", {1, 1} => ".", {2, 1} => "#",
+                     {0, 2} => "#", {1, 2} => "#", {2, 2} => "#"}, fn
+      map ->
+        width = :math.sqrt(length(map |> Map.keys)) |> trunc
         size = if rem(width, 2) == 0, do: 2, else: 3
-        flat
+        map
         |> chunk(size)
+        |> IO.inspect
         |> replace(replacements)
         |> flatten
     end)
@@ -16,7 +21,7 @@ defmodule FractalArt do
 
   def count_on(pixels) do
     pixels
-    |> List.flatten
+    |> Map.values
     |> Enum.reject(&(&1 == "."))
     |> length
   end
@@ -46,54 +51,47 @@ defmodule FractalArt do
     pattern
     |> String.split("/")
     |> Enum.map(&String.graphemes/1)
+    |> List.flatten
   end
 
-  defp rotate([[a, b],
-               [c, d]]), do: [[b, d],
-                              [a, c]]
+  defp rotate([a, b,
+               c, d]), do: [b, d,
+                            a, c]
 
-  defp rotate([[a, b, c],
-               [d, e, f],
-               [g, h, i]]), do: [[c, f, i],
-                                 [b, e, h],
-                                 [a, d, g]]
+  defp rotate([a, b, c,
+               d, e, f,
+               g, h, i]), do: [c, f, i,
+                               b, e, h,
+                               a, d, g]
 
-  defp flip([[a, b],
-             [c, d]]), do: [[b, a],
-                            [d, c]]
+  defp flip([a, b,
+             c, d]), do: [b, a,
+                          d, c]
 
-  defp flip([[a, b, c],
-             [d, e, f],
-             [g, h, i]]), do: [[c, b, a],
-                               [f, e, d],
-                               [i, h, g]]
+  defp flip([a, b, c,
+             d, e, f,
+             g, h, i]), do: [c, b, a,
+                             f, e, d,
+                             i, h, g]
 
   defp replace(parts, replacements) do
-    Enum.map(parts, fn
-      rows ->
-        Enum.map(rows, fn
-          row ->
-            Map.get(replacements, row)
-        end)
-    end)
+    Enum.map(parts, fn part -> Map.get(replacements, part) end)
   end
 
-  def chunk(pixels, size) do
-    length = length(pixels)
+  def chunk(map, size) do
+    IO.inspect(map)
+    length = length(map |> Map.values)
     width = :math.sqrt(length) |> trunc
     chunks = div(width, size)
-    parts = []
-    0..(length - 1)
-    |> Enum.reduce([], fn
-      (i, parts) ->
-        i1 = div(i, div(length, chunks))
-        i2 = rem(div(i, size), chunks)
-        i3 = rem(div(i, div(length, width)), size)
-        i4 = rem(i, size)
-        a = (parts |> Enum.at(i1)) || []
-        b = (a |> Enum.at(i2)) || []
-        c = (b |> Enum.at(i3)) || []
-        put(parts, i1, put(a, i2, put(b, i3, put(c, i4, pixels |> Enum.at(i)))))
+    parts = Stream.cycle([[]]) |> Enum.take(chunks * chunks)
+    |> IO.inspect
+    map
+    |> Map.keys
+    |> Enum.sort_by(fn {x, y} -> {y, x} end)
+    |> Enum.reduce(parts, fn
+      ({x, y}, parts) ->
+        i = rem(y, chunks) * chunks + rem(x, chunks)
+        List.replace_at(parts, i, Enum.at(parts, i) ++ [Map.get(map, {x, y})])
     end)
   end
 
@@ -106,15 +104,18 @@ defmodule FractalArt do
   end
 
   def flatten(parts) do
+    IO.inspect(parts)
     flat = List.flatten(parts)
     length = length(flat)
     width = :math.sqrt(length) |> trunc
     size = parts |> List.first |> List.first |> List.first |> length
     chunks = length(parts)
+    dlc = div(length, chunks)
+    dlw = div(length, width)
     for i <- 0..(length - 1) do
-      i1 = div(i, div(length, chunks))
+      i1 = div(i, dlc)
       i2 = rem(div(i, size), chunks)
-      i3 = rem(div(i, div(length, width)), size)
+      i3 = rem(div(i, dlw), size)
       i4 = rem(i, size)
       parts |> Enum.at(i1) |> Enum.at(i2) |> Enum.at(i3) |> Enum.at(i4)
     end
@@ -126,8 +127,13 @@ stream = System.argv
 |> FractalArt.stream
 
 # Part one
-stream
+after_five = stream
 |> Enum.at(5)
 |> FractalArt.count_on
 |> IO.inspect
 
+# Part two
+after_eighteen = stream
+|> Enum.at(18)
+|> FractalArt.count_on
+|> IO.inspect
