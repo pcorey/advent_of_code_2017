@@ -4,7 +4,6 @@ defmodule FractalArt do
   def stream(input) do
     replacements = input
     |> parse
-    |> IO.inspect
     Stream.iterate(%{{0, 0} => ".", {1, 0} => "#", {2, 0} => ".",
                      {0, 1} => ".", {1, 1} => ".", {2, 1} => "#",
                      {0, 2} => "#", {1, 2} => "#", {2, 2} => "#"}, fn
@@ -13,7 +12,6 @@ defmodule FractalArt do
         size = if rem(width, 2) == 0, do: 2, else: 3
         map
         |> chunk(size)
-        |> IO.inspect
         |> replace(replacements)
         |> flatten
     end)
@@ -51,47 +49,69 @@ defmodule FractalArt do
     pattern
     |> String.split("/")
     |> Enum.map(&String.graphemes/1)
-    |> List.flatten
+    |> Enum.map(&Enum.with_index/1)
+    |> Enum.with_index
+    |> Enum.reduce(%{}, fn
+      ({row, y}, map) ->
+        row
+        |> Enum.reduce(map, fn
+          ({v, x}, map) ->
+            Map.put(map, {x, y}, v)
+        end)
+    end)
   end
 
-  defp rotate([a, b,
-               c, d]), do: [b, d,
-                            a, c]
+  defp rotate(%{{0, 0} => a, {1, 0} => b, {2, 0} => c,
+                {0, 1} => d, {1, 1} => e, {2, 1} => f,
+                {0, 2} => g, {1, 2} => h, {2, 2} => i}) do
+    %{{0, 0} => c, {1, 0} => f, {2, 0} => i,
+      {0, 1} => b, {1, 1} => e, {2, 1} => h,
+      {0, 2} => a, {1, 2} => d, {2, 2} => g}
+  end
 
-  defp rotate([a, b, c,
-               d, e, f,
-               g, h, i]), do: [c, f, i,
-                               b, e, h,
-                               a, d, g]
+  defp rotate(%{{0, 0} => a, {1, 0} => b,
+                {0, 1} => c, {1, 1} => d}) do
+    %{{0, 0} => b, {1, 0} => d,
+      {0, 1} => a, {1, 1} => c}
+  end
 
-  defp flip([a, b,
-             c, d]), do: [b, a,
-                          d, c]
+  defp flip(%{{0, 0} => a, {1, 0} => b, {2, 0} => c,
+              {0, 1} => d, {1, 1} => e, {2, 1} => f,
+              {0, 2} => g, {1, 2} => h, {2, 2} => i}) do
+    %{{0, 0} => c, {1, 0} => b, {2, 0} => a,
+      {0, 1} => f, {1, 1} => e, {2, 1} => d,
+      {0, 2} => i, {1, 2} => h, {2, 2} => g}
+  end
 
-  defp flip([a, b, c,
-             d, e, f,
-             g, h, i]), do: [c, b, a,
-                             f, e, d,
-                             i, h, g]
+  defp flip(%{{0, 0} => a, {1, 0} => b,
+              {0, 1} => c, {1, 1} => d}) do
+    %{{0, 0} => b, {1, 0} => a,
+      {0, 1} => d, {1, 1} => c}
+  end
 
   defp replace(parts, replacements) do
-    Enum.map(parts, fn part -> Map.get(replacements, part) end)
+    parts
+    |> Enum.reduce(%{}, fn
+      ({k, v}, map) ->
+        Map.put(map, k, Map.get(replacements, v))
+    end)
   end
 
   def chunk(map, size) do
-    IO.inspect(map)
     length = length(map |> Map.values)
     width = :math.sqrt(length) |> trunc
     chunks = div(width, size)
-    parts = Stream.cycle([[]]) |> Enum.take(chunks * chunks)
-    |> IO.inspect
+    # parts = Stream.cycle([%{}]) |> Enum.take(chunks * chunks)
     map
     |> Map.keys
     |> Enum.sort_by(fn {x, y} -> {y, x} end)
-    |> Enum.reduce(parts, fn
+    |> Enum.reduce(%{}, fn
       ({x, y}, parts) ->
-        i = rem(y, chunks) * chunks + rem(x, chunks)
-        List.replace_at(parts, i, Enum.at(parts, i) ++ [Map.get(map, {x, y})])
+        x2 = div(x, size)
+        y2 = div(y, size)
+        part = Map.get(parts, {x2, y2}) || %{}
+        part = Map.put(part, {rem(x, size), rem(y, size)}, Map.get(map, {x, y}))
+        Map.put(parts, {x2, y2}, part)
     end)
   end
 
@@ -103,22 +123,29 @@ defmodule FractalArt do
     end
   end
 
+  defp chunk_size(parts) do
+    key = parts
+    |> Map.keys
+    |> List.first
+    chunk = parts
+    |> Map.get(key)
+    length = chunk
+    |> Map.values
+    |> length
+    :math.sqrt(length) |> trunc
+  end
+
   def flatten(parts) do
-    IO.inspect(parts)
-    flat = List.flatten(parts)
-    length = length(flat)
-    width = :math.sqrt(length) |> trunc
-    size = parts |> List.first |> List.first |> List.first |> length
-    chunks = length(parts)
-    dlc = div(length, chunks)
-    dlw = div(length, width)
-    for i <- 0..(length - 1) do
-      i1 = div(i, dlc)
-      i2 = rem(div(i, size), chunks)
-      i3 = rem(div(i, dlw), size)
-      i4 = rem(i, size)
-      parts |> Enum.at(i1) |> Enum.at(i2) |> Enum.at(i3) |> Enum.at(i4)
-    end
+    size = chunk_size(parts)
+    parts
+    |> Enum.reduce(%{}, fn
+      ({{x1, y1}, chunk}, map) ->
+        chunk
+        |> Enum.reduce(map, fn
+          ({{x2, y2}, v}, map) ->
+            Map.put(map, {x1 * size + x2, y1 * size + y2}, v)
+        end)
+    end)
   end
 end
 
